@@ -16,6 +16,12 @@
 // Clock pin only needed for SPI based chipsets when not using hardware SPI
 //#define CLOCK_PIN 8
 
+//variables for new led delay based on number of leds
+unsigned long last_start;
+unsigned int new_led_delay = 6500/NUM_LEDS;
+unsigned int fade_delay = 50;
+
+
 // Create array for the leds
 CRGB leds[NUM_LEDS];
 
@@ -28,13 +34,15 @@ void setup() {
 	
 	// set initial master brightness of LEDS
 	FastLED.setBrightness(255);
+ last_start = millis();
 
 }
 
 void loop() {
 	// fade to black
 	fadeToBlackBy( leds, NUM_LEDS, 10);
-	
+	if (millis()-last_start > new_led_delay)
+  {
 	// pick a random led from the string
 	int x = random16(NUM_LEDS);
 	
@@ -42,10 +50,11 @@ void loop() {
 	if (!leds[x])
 	{
 		// if the led was off, set a random hue at full saturation and value
-		leds[ x ] += CHSV( random8(), 255, 255);
+		leds[ x ] += CHSV( random8(),random8( 128, 255), 255);
 	}
+  }
 	FastLED.show();
-	FastLED.delay(20);
+	FastLED.delay(fade_delay);
 
 }
 
