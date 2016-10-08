@@ -1,9 +1,9 @@
-#include "FastLED.h"
+#include <FastLED.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Confetti
+// multi-function light string
 //
 //////////////////////////////////////////////////
 
@@ -13,19 +13,47 @@
 // Data pin that led data will be written out over
 #define DATA_PIN 11
 
-// Clock pin only needed for SPI based chipsets when not using hardware SPI
-//#define CLOCK_PIN 8
+// setup switches
+const int Left_SW = 2;
+const int Right_SW =3;
 
-//variables for new led delay based on number of leds
+// misc variables
 unsigned long last_start;
-unsigned int new_led_delay = 6500/NUM_LEDS;
-unsigned int fade_delay = 50;
+int masterBrightness = 128;
 
+// switch initialization
+bool LeftFirst = false;
+bool RightFirst = false;
+bool LeftSecond = false;
+bool RightSecond = false;
 
 // Create array for the leds
-CRGB leds[NUM_LEDS];
+//CRGB leds[NUM_LEDS];
+CRGBArray<NUM_LEDS> leds;
+//include modules
+#include "master.h"
+#include "confetti.h"
+#include "RainbowChase.h"
+#include "Larson.h"
+
+// setup instance of each mode class
+Confetti confetti;
+RainbowChase rainbowchase;
+Larson larson;
+
+int currentModule = 0;
+Master* modules[] = {
+	&confetti,
+	&rainbowchase,
+	&larson,
+};
+
 
 void setup() {
+	//setup switch pins
+	pinMode(Left_SW, INPUT);
+	pinMode(Right_SW, INPUT);
+	randomSeed(analogRead (0));
 	// sanity check delay - allows reprogramming if accidentally blowing power w/leds
 	delay(2000);
 
@@ -33,28 +61,47 @@ void setup() {
 	FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
 	
 	// set initial master brightness of LEDS
-	FastLED.setBrightness(255);
- last_start = millis();
+	FastLED.setBrightness(masterBrightness);
+	last_start = millis();
 
 }
 
 void loop() {
-	// fade to black
-	fadeToBlackBy( leds, NUM_LEDS, 10);
-	if (millis()-last_start > new_led_delay)
-  {
-	// pick a random led from the string
-	int x = random16(NUM_LEDS);
+	// first check state of switches
+	LeftFirst = digitalRead(Left_SW);
+	RightFirst = digitalRead(Right_SW);
+	FastLED.delay (10);
 	
-	// check if the led is off
-	if (!leds[x])
+	modules[currentModule]->loop ();
+	
+	if (currentModule==2)
 	{
-		// if the led was off, set a random hue at full saturation and value
-		leds[ x ] += CHSV( random8(),random8( 128, 255), 255);
+		FastLED.setBrightness(254);
 	}
-  }
+	else
+	{
+		FastLED.setBrightness(masterBrightness);
+	}
+	
 	FastLED.show();
-	FastLED.delay(fade_delay);
+	
+	// second check state of switches
+	LeftSecond = digitalRead(Left_SW);
+	RightSecond = digitalRead(Right_SW);
+	
+	if (LeftFirst && !LeftSecond) {
+		// Turn off all the pixels when entering new mode.
+		FastLED.clear();
+		FastLED.show();
+		// Increment the current demo (looping back to zero if at end).
+		currentModule += 1;
+		if (currentModule >= (sizeof(modules)/sizeof(Master*))) {
+			currentModule = 0;
+		}
+	}
 
+	if (RightFirst && !RightSecond)
+	{
+		modules[currentModule]->modePress();
+	}
 }
-
