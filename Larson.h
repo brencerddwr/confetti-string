@@ -4,7 +4,7 @@
 #include "master.h"
 
 static uint8_t larsonHue = 0;
-static int InterframeDelay[] = {20,40,80};
+static int InterframeDelay[] = {30,60,90,180};
 int currentDelay = 0;
 int larsonLoopCounter = 0;
 bool larsonUP = true;

@@ -35,17 +35,20 @@ CRGBArray<NUM_LEDS> leds;
 #include "confetti.h"
 #include "RainbowChase.h"
 #include "Larson.h"
+#include "antialias.h"
 
 // setup instance of each mode class
 Confetti confetti;
 RainbowChase rainbowchase;
 Larson larson;
+AntiAlias antialias;
 
 int currentModule = 0;
 Master* modules[] = {
 	&confetti,
 	&rainbowchase,
 	&larson,
+	&antialias,
 };
 
 
